@@ -1,0 +1,76 @@
+version: '3.7'
+
+networks:
+  net:
+    external: true
+
+volumes:
+    prometheus-data: {}
+    grafana-data: {}
+
+services:
+  prometheus:
+    build:
+      context: ./prometheus/
+      dockerfile: Dockerfile
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    networks: 
+      - "net"
+    volumes:
+#      - ./prometheus/config_files/:/etc/prometheus/
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.config.file=/etc/prometheus/web.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.external-url=http://prometheus.cld.education
+      - --log.level=warn
+
+
+  alertmanager:
+    build:
+      context: ./alertmanager/
+      dockerfile: Dockerfile
+    container_name: alertmanager
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager    
+    ports:
+      - 9093:9093
+    networks: 
+      - "net"
+
+
+  grafana:
+    build:
+      context: ./grafana/
+      dockerfile: Dockerfile
+    container_name: grafana
+    restart: unless-stopped   
+    ports:
+      - 3000:3000
+    networks: 
+      - "net"
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_UDP_ENABLED: 'true'
+      INFLUXDB_HOSTNAME: influxdb
+      INFLUXDB_UDP_BIND_ADDRESS: 0.0.0.0:8089
+      INFLUXDB_UDP_DATABASE: prometheus
+  
+    volumes:
+      # Data persistency
+      # sudo mkdir -p /srv/docker/influxdb/data
+      - /srv/docker/influxdb/data:/var/lib/influxdb
