@@ -1,2 +1,2 @@
 # Docker-Prometheus-Monitoring
-Monitonring infrastructure by DockerPrometheus, Alertmanager, Grafana, InfluxDB
+Monitonring infrastructure - Prometheus, Alertmanager, Grafana, InfluxDB deployed ba docker-compose
